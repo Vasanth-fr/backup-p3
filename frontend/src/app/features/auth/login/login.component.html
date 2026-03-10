@@ -1,0 +1,61 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+  <div class="card shadow-sm" style="width: 420px;">
+    <div class="card-body p-5">
+
+      <!-- Header -->
+      <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary">RevConnect</h2>
+        <p class="text-muted">Sign in to your account</p>
+      </div>
+
+      <!-- ERROR -->
+      <div class="alert alert-danger" *ngIf="error">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Email</label>
+          <input
+            type="email"
+            class="form-control"
+            formControlName="email"
+            placeholder="Enter your email"
+            [class.is-invalid]="f['email'].touched && f['email'].invalid"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Password</label>
+          <input
+            type="password"
+            class="form-control"
+            formControlName="password"
+            placeholder="Enter your password"
+            [class.is-invalid]="f['password'].touched && f['password'].invalid"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+          [disabled]="loading"
+        >
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          {{ loading ? 'Signing in...' : 'Sign In' }}
+        </button>
+
+      </form>
+
+      <hr class="my-4" />
+
+      <p class="text-center text-muted mb-0">
+        Don't have an account?
+        <a routerLink="/register" class="text-primary fw-semibold">Sign up</a>
+      </p>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,383 @@
+<div class="container py-4">
+  <div class="row">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="col-md-3 d-none d-md-block">
+
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body text-center">
+
+          <div
+            class="rounded-circle bg-primary text-white
+            d-flex align-items-center justify-content-center
+            mx-auto mb-2"
+            style="width:60px;height:60px;font-size:24px;">
+            👤
+          </div>
+
+          <a
+            [routerLink]="['/profile', currentUserId]"
+            class="fw-bold text-decoration-none">
+
+            My Profile
+
+          </a>
+
+        </div>
+      </div>
+
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+          <h6 class="fw-bold mb-3">Quick Links</h6>
+
+          <nav class="nav flex-column gap-2">
+
+            <a routerLink="/feed" class="nav-link px-0 py-1">
+              🏠 Home Feed
+            </a>
+
+            <a routerLink="/network" class="nav-link px-0 py-1">
+              👥 My Network
+            </a>
+
+            <a routerLink="/notifications" class="nav-link px-0 py-1">
+              🔔 Notifications
+            </a>
+
+          </nav>
+
+        </div>
+      </div>
+
+    </div>
+
+
+
+    <!-- MAIN FEED -->
+    <div class="col-md-6">
+
+
+      <!-- SEARCH -->
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search people..."
+            (input)="onSearchInput($any($event.target).value)"
+          >
+
+        </div>
+      </div>
+
+
+
+      <!-- SEARCH RESULTS -->
+      <div class="card mb-3 shadow-sm" *ngIf="users?.length">
+        <div class="card-body">
+
+          <div
+            *ngFor="let user of users"
+            class="d-flex align-items-center mb-3">
+
+            <div
+              class="rounded-circle bg-secondary text-white
+              d-flex align-items-center justify-content-center me-3"
+              style="width:40px;height:40px;">
+              👤
+            </div>
+
+            <div class="flex-grow-1">
+
+              <a
+                [routerLink]="['/profile', user.id]"
+                class="fw-bold text-decoration-none">
+
+                {{ user.fullName || user.username }}
+
+              </a>
+
+              <div class="text-muted small">
+                @{{ user.username }}
+              </div>
+
+            </div>
+
+            <button
+              *ngIf="user.id !== currentUserId"
+              class="btn btn-sm btn-outline-primary"
+              (click)="follow(user)">
+              Follow
+            </button>
+
+          </div>
+
+        </div>
+      </div>
+
+
+
+      <!-- CREATE POST -->
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+
+          <textarea
+            class="form-control mb-2"
+            rows="3"
+            [(ngModel)]="newPostContent"
+            placeholder="What's on your mind?"
+          ></textarea>
+
+          <input
+            class="form-control mb-2"
+            [(ngModel)]="newPostHashtags"
+            placeholder="#tech #coding"
+          >
+
+          <button
+            class="btn btn-primary w-100"
+            (click)="createPost()"
+            [disabled]="creatingPost">
+
+            {{ creatingPost ? 'Posting...' : 'Post' }}
+
+          </button>
+
+        </div>
+      </div>
+
+
+
+      <!-- LOADING SKELETON -->
+      <div *ngIf="loading">
+
+        <div
+          class="card mb-3 shadow-sm p-3"
+          *ngFor="let s of [1,2,3]">
+
+          <div class="placeholder-glow">
+
+            <span class="placeholder col-6"></span>
+            <span class="placeholder col-12"></span>
+            <span class="placeholder col-4"></span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- POSTS -->
+      <div
+        class="card mb-3 shadow-sm"
+        *ngFor="let post of posts"
+        [attr.id]="'post-' + post.id">
+
+        <div class="card-body">
+
+
+          <!-- AUTHOR -->
+          <div class="d-flex justify-content-between">
+
+            <a
+              [routerLink]="['/profile', post.author?.id]"
+              class="fw-bold text-decoration-none">
+
+              {{ post.author?.fullName || post.author?.username }}
+
+            </a>
+
+            <button
+              *ngIf="post.author?.id !== currentUserId"
+              class="btn btn-sm btn-outline-primary"
+              (click)="follow(post.author)">
+              Follow
+            </button>
+
+          </div>
+
+
+
+          <!-- CONTENT -->
+          <p class="mt-2">
+
+            <span *ngFor="let word of formatContent(post.content)">
+
+              <a
+                *ngIf="word.startsWith('#')"
+                (click)="searchHashtag(word)"
+                class="text-primary fw-bold"
+                style="cursor:pointer">
+
+                {{ word }}
+
+              </a>
+
+              <span *ngIf="!word.startsWith('#')">
+                {{ word }}
+              </span>
+
+            </span>
+
+          </p>
+
+
+
+          <!-- ACTIONS -->
+          <div class="d-flex gap-3 border-top pt-2">
+
+            <button
+              class="btn btn-sm"
+              (click)="toggleLike(post)">
+
+              {{ post.likedByCurrentUser ? '❤️' : '🤍' }}
+              {{ post.likeCount }}
+
+            </button>
+
+
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              (click)="toggleComments(post)">
+
+              💬 {{ post.commentCount }}
+
+            </button>
+
+          </div>
+
+
+
+          <!-- COMMENTS -->
+          <div *ngIf="post.showComments" class="mt-3">
+
+
+            <!-- COMMENT -->
+            <div
+              *ngFor="let comment of post.comments"
+              class="mb-3">
+
+              <strong>{{ comment.username }}</strong>
+              {{ comment.content }}
+
+              <div class="d-flex gap-2 mt-1">
+
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="likeComment(comment)">
+                  👍 {{ comment.likeCount }}
+                </button>
+
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="comment.showReply = !comment.showReply">
+                  Reply
+                </button>
+
+                <button
+                  *ngIf="comment.userId === currentUserId"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="deleteComment(comment, post)">
+                  Delete
+                </button>
+
+              </div>
+
+
+
+              <!-- REPLY INPUT -->
+              <div
+                *ngIf="comment.showReply"
+                class="input-group mt-2">
+
+                <input
+                  class="form-control"
+                  [(ngModel)]="comment.replyText"
+                  placeholder="Write a reply">
+
+                <button
+                  class="btn btn-primary"
+                  (click)="reply(post, comment)">
+                  Send
+                </button>
+
+              </div>
+
+
+
+              <!-- REPLIES -->
+              <div
+                class="ms-4 mt-2"
+                *ngIf="comment.replies?.length">
+
+                <div
+                  *ngFor="let reply of comment.replies"
+                  class="mb-1">
+
+                  <strong>{{ reply.username }}</strong>
+                  {{ reply.content }}
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+
+            <!-- ADD COMMENT -->
+            <div class="input-group mt-3">
+
+              <input
+                class="form-control"
+                [(ngModel)]="post.newComment"
+                placeholder="Write comment">
+
+              <button
+                class="btn btn-primary"
+                (click)="addComment(post)">
+                Send
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="col-md-3 d-none d-md-block">
+
+      <div class="card shadow-sm">
+
+        <div class="card-body">
+
+          <h6 class="fw-bold">🔥 Trending</h6>
+
+          <button
+            class="btn btn-outline-secondary btn-sm w-100"
+            (click)="loadFeed()">
+
+            Refresh Feed
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>

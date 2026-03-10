@@ -1,0 +1,163 @@
+<div class="container py-4 edit-container">
+
+  <div class="d-flex align-items-center mb-4">
+    <button class="btn btn-outline-secondary me-3"
+            (click)="router.navigate(['/profile', userId])">
+      ← Back
+    </button>
+
+    <h4 class="fw-bold mb-0">Edit Profile</h4>
+  </div>
+
+  <div class="alert alert-success" *ngIf="saved">
+    Profile updated successfully!
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <div class="card edit-card">
+
+    <div class="card-body p-4">
+
+      <form [formGroup]="profileForm"
+            (ngSubmit)="onSubmit()">
+
+        <div class="row g-3 mb-3">
+
+          <div class="col">
+            <label class="form-label fw-semibold">
+              First Name
+            </label>
+
+            <input type="text"
+                   class="form-control"
+                   formControlName="firstName">
+          </div>
+
+          <div class="col">
+            <label class="form-label fw-semibold">
+              Last Name
+            </label>
+
+            <input type="text"
+                   class="form-control"
+                   formControlName="lastName">
+          </div>
+
+        </div>
+
+        <div class="mb-3">
+
+          <label class="form-label fw-semibold">
+            Bio
+          </label>
+
+          <textarea class="form-control"
+                    rows="3"
+                    formControlName="bio"
+                    placeholder="Tell us about yourself">
+          </textarea>
+
+        </div>
+
+        <div class="mb-3">
+
+          <label class="form-label fw-semibold">
+            Location
+          </label>
+
+          <input type="text"
+                 class="form-control"
+                 formControlName="location"
+                 placeholder="City, Country">
+
+        </div>
+
+        <div class="mb-3">
+
+          <label class="form-label fw-semibold">
+            Website
+          </label>
+
+          <input type="url"
+                 class="form-control"
+                 formControlName="website"
+                 placeholder="https://...">
+
+        </div>
+
+        <div class="mb-3">
+
+          <label class="form-label fw-semibold">
+            Privacy
+          </label>
+
+          <select class="form-select"
+                  formControlName="privacy">
+
+            <option value="PUBLIC">
+              Public - Anyone can see my profile
+            </option>
+
+            <option value="PRIVATE">
+              Private - Only connections can see
+            </option>
+
+          </select>
+
+        </div>
+
+        <ng-container *ngIf="isBusinessOrCreator">
+
+          <hr>
+
+          <h6 class="fw-bold mb-3">
+            Business / Creator Info
+          </h6>
+
+          <div class="mb-3">
+
+            <label class="form-label fw-semibold">
+              Business Name
+            </label>
+
+            <input class="form-control"
+                   formControlName="businessName">
+
+          </div>
+
+        </ng-container>
+
+        <div class="d-flex justify-content-end gap-3 mt-4">
+
+          <button type="button"
+                  class="btn btn-outline-secondary"
+                  (click)="router.navigate(['/profile', userId])">
+
+            Cancel
+
+          </button>
+
+          <button type="submit"
+                  class="btn btn-primary"
+                  [disabled]="loading">
+
+            <span *ngIf="loading"
+                  class="spinner-border spinner-border-sm me-2">
+            </span>
+
+            Save Changes
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</div>

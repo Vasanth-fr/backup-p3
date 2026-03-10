@@ -1,0 +1,109 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow">
+
+  <div class="container">
+
+    <!-- Brand -->
+    <a class="navbar-brand fw-bold fs-4"
+       routerLink="/feed">
+      RevConnect
+    </a>
+
+    <!-- Mobile Toggle -->
+    <button class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse"
+         id="navbarMain">
+
+      <!-- Nav Links -->
+      <ul class="navbar-nav ms-auto align-items-center gap-2">
+
+        <li class="nav-item">
+          <a class="nav-link"
+             routerLink="/feed"
+             routerLinkActive="active">
+            🏠 Feed
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link"
+             routerLink="/network"
+             routerLinkActive="active">
+            👥 Network
+          </a>
+        </li>
+
+        <li class="nav-item position-relative">
+          <a class="nav-link"
+             routerLink="/notifications"
+             routerLinkActive="active">
+
+            🔔 Notifications
+
+            <span *ngIf="unreadCount > 0"
+                  class="badge bg-danger rounded-pill position-absolute"
+                  style="top:4px;right:0;">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+
+          </a>
+        </li>
+
+        <!-- Profile Dropdown -->
+        <li class="nav-item dropdown">
+
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-1"
+             href="#"
+             data-bs-toggle="dropdown">
+
+            <div class="rounded-circle bg-white text-primary
+                        d-flex align-items-center justify-content-center"
+                 style="width:30px;height:30px;font-size:14px;">
+              👤
+            </div>
+
+            {{ username }}
+
+          </a>
+
+          <ul class="dropdown-menu dropdown-menu-end">
+
+            <li>
+              <a class="dropdown-item"
+                 [routerLink]="['/profile', currentUserId]">
+                My Profile
+              </a>
+            </li>
+
+<!--            <li>-->
+<!--              <a class="dropdown-item"-->
+<!--                 [routerLink]="['/profile', currentUserId, 'edit']">-->
+<!--                Edit Profile-->
+<!--              </a>-->
+<!--            </li> -->
+
+            <li><hr class="dropdown-divider"></li>
+
+            <li>
+              <button class="dropdown-item text-danger"
+                      (click)="logout()">
+                Sign Out
+              </button>
+            </li>
+
+          </ul>
+
+        </li>
+
+      </ul>
+
+    </div>
+
+  </div>
+
+</nav>

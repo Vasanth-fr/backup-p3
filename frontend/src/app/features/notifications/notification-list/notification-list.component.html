@@ -1,0 +1,54 @@
+<div class="notif-wrapper">
+
+  <!-- Header -->
+  <div class="notif-header">
+    <h5 class="notif-title">Notifications</h5>
+    <button class="mark-all-btn" (click)="markAllRead()"
+            *ngIf="!loading && getUnreadCount() > 0">
+      Mark all as read
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="notif-loading" *ngIf="loading">
+    <div class="notif-spinner"></div>
+  </div>
+
+  <!-- Empty -->
+  <div class="notif-empty" *ngIf="!loading && notifications.length === 0">
+    <span>🔔</span>
+    <p>No notifications yet.</p>
+  </div>
+
+  <!-- List -->
+  <div class="notif-list" *ngIf="!loading && notifications.length > 0">
+    <div
+      *ngFor="let n of notifications; let i = index"
+      class="notif-item"
+      [class.unread]="!n.read"
+      (click)="markRead(n)">
+
+      <!-- Icon -->
+      <div class="notif-icon" [ngClass]="getIconBg(n.type)">
+        <span>{{ getIcon(n.type) }}</span>
+      </div>
+
+      <!-- Text -->
+      <div class="notif-body">
+        <p class="notif-text">
+          <strong *ngIf="n.sender?.username">{{ n.sender?.username }}</strong>
+          {{ getMessage(n) }}
+        </p>
+        <span class="notif-time">{{ n.createdAt | date:'d MMM, h:mm a' }}</span>
+      </div>
+
+      <!-- Right side -->
+      <div class="notif-right">
+        <span class="blue-dot" *ngIf="!n.read"></span>
+        <button class="notif-delete" (click)="deleteNotif(n, i, $event)" title="Delete">✕</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,54 @@
+# ======================
+# Node / Angular
+# ======================
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+/dist
+/tmp
+/out-tsc
+/bazel-out
+.angular/cache
+.sass-cache/
+/coverage
+/typings
+npm-debug.log
+yarn-error.log
+testem.log
+
+# ======================
+# Spring Boot / Backend
+# ======================
+backend/target/
+backend/logs/
+target/
+logs/
+*.log
+*.gz
+
+# ======================
+# IDEs & Editors
+# ======================
+.idea/
+*.iml
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# ======================
+# System / OS Files
+# ======================
+.DS_Store
+Thumbs.db
