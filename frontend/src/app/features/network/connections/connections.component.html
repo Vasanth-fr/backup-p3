@@ -55,11 +55,11 @@
                  style="width:50px;height:50px;">👤</div>
 
             <h6 class="fw-bold mb-0">
-              {{ user.fullName || user.username }}
+              {{ getDisplayName(user) }}
             </h6>
 
             <small class="text-muted">
-              @{{ user.username }}
+              @{{ getDisplayUsername(user) }}
             </small>
 
             <div class="mt-2 d-flex gap-2 justify-content-center">
@@ -162,10 +162,10 @@
 
         <div class="flex-grow-1">
 
-          <strong>{{ r.requesterFullName || r.requesterUsername }}</strong>
+          <strong>{{ getOtherUserName(r) }}</strong>
 
           <div class="text-muted small">
-            @{{ r.requesterUsername }}
+            @{{ getOtherUserUsername(r) }}
           </div>
 
         </div>
@@ -202,7 +202,7 @@
 
         <div class="flex-grow-1">
 
-          <strong>{{ r.addresseeFullName || r.addresseeUsername }}</strong>
+          <strong>{{ getOtherUserName(r) }}</strong>
 
           <div class="text-muted small">
             Pending

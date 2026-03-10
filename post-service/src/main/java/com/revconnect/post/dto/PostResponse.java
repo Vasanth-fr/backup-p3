@@ -6,11 +6,13 @@ public class PostResponse {
 
     private Long id;
     private Long userId;
+    private AuthorResponse author;
     private String content;
     private String imageUrl;
     private LocalDateTime createdAt;
     private Long likeCount;
     private Long commentCount;
+    private Boolean likedByCurrentUser;
 
     public PostResponse() {
     }
@@ -18,11 +20,13 @@ public class PostResponse {
     private PostResponse(Builder builder) {
         this.id = builder.id;
         this.userId = builder.userId;
+        this.author = builder.author;
         this.content = builder.content;
         this.imageUrl = builder.imageUrl;
         this.createdAt = builder.createdAt;
         this.likeCount = builder.likeCount;
         this.commentCount = builder.commentCount;
+        this.likedByCurrentUser = builder.likedByCurrentUser;
     }
 
     public Long getId() {
@@ -39,6 +43,14 @@ public class PostResponse {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public AuthorResponse getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(AuthorResponse author) {
+        this.author = author;
     }
 
     public String getContent() {
@@ -81,6 +93,14 @@ public class PostResponse {
         this.commentCount = commentCount;
     }
 
+    public Boolean getLikedByCurrentUser() {
+        return likedByCurrentUser;
+    }
+
+    public void setLikedByCurrentUser(Boolean likedByCurrentUser) {
+        this.likedByCurrentUser = likedByCurrentUser;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -88,11 +108,13 @@ public class PostResponse {
     public static class Builder {
         private Long id;
         private Long userId;
+        private AuthorResponse author;
         private String content;
         private String imageUrl;
         private LocalDateTime createdAt;
         private Long likeCount;
         private Long commentCount;
+        private Boolean likedByCurrentUser;
 
         public Builder id(Long id) {
             this.id = id;
@@ -101,6 +123,11 @@ public class PostResponse {
 
         public Builder userId(Long userId) {
             this.userId = userId;
+            return this;
+        }
+
+        public Builder author(AuthorResponse author) {
+            this.author = author;
             return this;
         }
 
@@ -129,8 +156,52 @@ public class PostResponse {
             return this;
         }
 
+        public Builder likedByCurrentUser(Boolean likedByCurrentUser) {
+            this.likedByCurrentUser = likedByCurrentUser;
+            return this;
+        }
+
         public PostResponse build() {
             return new PostResponse(this);
+        }
+    }
+
+    public static class AuthorResponse {
+        private Long id;
+        private String username;
+        private String fullName;
+        private String email;
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getFullName() {
+            return fullName;
+        }
+
+        public void setFullName(String fullName) {
+            this.fullName = fullName;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
         }
     }
 }

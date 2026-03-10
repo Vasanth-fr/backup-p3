@@ -33,9 +33,15 @@ export class NotificationListComponent implements OnInit {
     this.loading = true;
     // P3: returns Notification[] directly (no wrapper)
     this.notificationService.getNotifications()
-      .subscribe(notifications => {
-        this.notifications = notifications;
-        this.loading = false;
+      .subscribe({
+        next: notifications => {
+          this.notifications = notifications;
+          this.loading = false;
+        },
+        error: () => {
+          this.notifications = [];
+          this.loading = false;
+        }
       });
   }
 

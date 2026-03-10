@@ -91,6 +91,13 @@ public class ConnectionController {
         return ResponseEntity.ok(pendingRequests);
     }
 
+    @GetMapping("/sent")
+    public ResponseEntity<List<ConnectionResponse>> getSentRequests(
+            @RequestHeader("X-User-Id") Long userId) {
+        List<ConnectionResponse> sentRequests = connectionService.getSentRequests(userId);
+        return ResponseEntity.ok(sentRequests);
+    }
+
     /**
      * Check connection status between current user and another user
      * GET /api/network/check/{userId}

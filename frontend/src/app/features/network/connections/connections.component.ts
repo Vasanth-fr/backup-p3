@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { NetworkService } from '../../../core/services/network.service';
+import { NetworkConnection, NetworkService } from '../../../core/services/network.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Connection, User } from '../../../shared/models/models';
+import { UserSummaryResponse, UserService } from '../../../core/services/user.service';
 
 @Component({
   selector: 'app-connections',
@@ -12,16 +12,17 @@ export class ConnectionsComponent implements OnInit {
 
   tab = 'discover';
 
-  connections: Connection[] = [];
-  pendingRequests: Connection[] = [];
-  sentRequests: Connection[] = [];
-  allUsers: User[] = [];
+  connections: NetworkConnection[] = [];
+  pendingRequests: NetworkConnection[] = [];
+  sentRequests: NetworkConnection[] = [];
+  allUsers: UserSummaryResponse[] = [];
 
   sentUserIds = new Set<number>();
   currentUserId = 0;
 
   constructor(
     private networkService: NetworkService,
+    private userService: UserService,
     private authService: AuthService
   ) {}
 
@@ -43,76 +44,80 @@ export class ConnectionsComponent implements OnInit {
       .subscribe(requests => {
         this.sentRequests = requests;
         this.sentRequests.forEach(req => {
-          this.sentUserIds.add(req.addresseeId);
+          if (req.userDetails?.id) {
+            this.sentUserIds.add(req.userDetails.id);
+          }
         });
       });
 
-    this.networkService.getSuggestedConnections(50)
-      .subscribe((users: any[]) => {
-        this.allUsers = users;
+    this.userService.searchUsers('')
+      .subscribe(users => {
+        this.allUsers = users.filter(user => user.id !== this.currentUserId);
       });
   }
 
-  sendRequest(user: User): void {
+  sendRequest(user: UserSummaryResponse): void {
     this.networkService.sendRequest(user.id)
       .subscribe(() => {
         this.sentUserIds.add(user.id);
       });
   }
 
-  accept(c: Connection): void {
+  accept(c: NetworkConnection): void {
     this.networkService.acceptRequest(c.id)
-      .subscribe(() => {
+      .subscribe(connection => {
         this.pendingRequests = this.pendingRequests.filter(r => r.id !== c.id);
-        this.connections.push({ ...c, status: 'ACCEPTED' });
+        this.connections.push(connection);
       });
   }
 
-  reject(c: Connection): void {
+  reject(c: NetworkConnection): void {
     this.networkService.rejectRequest(c.id)
       .subscribe(() => {
         this.pendingRequests = this.pendingRequests.filter(r => r.id !== c.id);
       });
   }
 
-  removeConnection(c: Connection): void {
-    const otherUserId = this.getOtherUserId(c);
-    this.networkService.removeConnection(otherUserId)
+  removeConnection(c: NetworkConnection): void {
+    this.networkService.removeConnection(c.id)
       .subscribe(() => {
         this.connections = this.connections.filter(conn => conn.id !== c.id);
       });
   }
 
   removeConnectionFromDiscover(userId: number): void {
-    this.networkService.removeConnection(userId)
+    const connection = this.connections.find(c => c.userDetails?.id === userId);
+    if (!connection) {
+      return;
+    }
+
+    this.networkService.removeConnection(connection.id)
       .subscribe(() => {
-        this.connections = this.connections.filter(c =>
-          c.requesterId !== userId && c.addresseeId !== userId
-        );
+        this.connections = this.connections.filter(c => c.id !== connection.id);
       });
   }
 
   isConnected(userId: number): boolean {
-    return this.connections.some(c =>
-      c.requesterId === userId || c.addresseeId === userId
-    );
+    return this.connections.some(c => c.userDetails?.id === userId);
   }
 
-  getOtherUserName(c: Connection): string {
-    return c.requesterId === this.currentUserId
-      ? (c.addresseeFullName || c.addresseeUsername)
-      : (c.requesterFullName || c.requesterUsername);
+  getDisplayName(user: UserSummaryResponse): string {
+    return user.fullName || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
   }
 
-  getOtherUserUsername(c: Connection): string {
-    return c.requesterId === this.currentUserId
-      ? c.addresseeUsername
-      : c.requesterUsername;
+  getDisplayUsername(user: UserSummaryResponse): string {
+    return user.username || user.email.split('@')[0];
   }
 
-  getOtherUserId(c: Connection): number {
-    return c.requesterId === this.currentUserId
-      ? c.addresseeId
-      : c.requesterId;
+  getOtherUserName(c: NetworkConnection): string {
+    return c.userDetails?.fullName || c.userDetails?.username || 'Unknown User';
+  }
+
+  getOtherUserUsername(c: NetworkConnection): string {
+    return c.userDetails?.username || 'unknown';
+  }
+
+  getOtherUserId(c: NetworkConnection): number {
+    return c.userDetails?.id || 0;
   }
 }

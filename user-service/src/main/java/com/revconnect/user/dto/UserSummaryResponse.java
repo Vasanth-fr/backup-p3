@@ -6,9 +6,12 @@ public class UserSummaryResponse {
 
     private Long id;
     private String email;
+    private String username;
+    private String fullName;
     private String firstName;
     private String lastName;
-    private String profilePictureUrl;
+    private String bio;
+    private String profileImageUrl;
 
     public UserSummaryResponse() {
     }
@@ -29,6 +32,22 @@ public class UserSummaryResponse {
         this.email = email;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
     public String getFirstName() {
         return firstName;
     }
@@ -45,21 +64,39 @@ public class UserSummaryResponse {
         this.lastName = lastName;
     }
 
-    public String getProfilePictureUrl() {
-        return profilePictureUrl;
+    public String getBio() {
+        return bio;
     }
 
-    public void setProfilePictureUrl(String profilePictureUrl) {
-        this.profilePictureUrl = profilePictureUrl;
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 
     public static UserSummaryResponse fromEntity(UserProfile profile) {
+        String username = profile.getEmail() != null && profile.getEmail().contains("@")
+                ? profile.getEmail().substring(0, profile.getEmail().indexOf('@'))
+                : profile.getEmail();
+        String fullName = String.format("%s %s",
+                profile.getFirstName() == null ? "" : profile.getFirstName(),
+                profile.getLastName() == null ? "" : profile.getLastName()).trim();
+
         return UserSummaryResponse.builder()
                 .id(profile.getId())
                 .email(profile.getEmail())
+                .username(username)
+                .fullName(fullName)
                 .firstName(profile.getFirstName())
                 .lastName(profile.getLastName())
-                .profilePictureUrl(profile.getProfilePictureUrl())
+                .bio(profile.getBio())
+                .profileImageUrl(profile.getProfilePictureUrl())
                 .build();
     }
 
@@ -70,9 +107,12 @@ public class UserSummaryResponse {
     public static class Builder {
         private Long id;
         private String email;
+        private String username;
+        private String fullName;
         private String firstName;
         private String lastName;
-        private String profilePictureUrl;
+        private String bio;
+        private String profileImageUrl;
 
         public Builder id(Long id) {
             this.id = id;
@@ -81,6 +121,16 @@ public class UserSummaryResponse {
 
         public Builder email(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder username(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder fullName(String fullName) {
+            this.fullName = fullName;
             return this;
         }
 
@@ -94,8 +144,13 @@ public class UserSummaryResponse {
             return this;
         }
 
-        public Builder profilePictureUrl(String profilePictureUrl) {
-            this.profilePictureUrl = profilePictureUrl;
+        public Builder bio(String bio) {
+            this.bio = bio;
+            return this;
+        }
+
+        public Builder profileImageUrl(String profileImageUrl) {
+            this.profileImageUrl = profileImageUrl;
             return this;
         }
 
@@ -103,9 +158,12 @@ public class UserSummaryResponse {
             UserSummaryResponse response = new UserSummaryResponse();
             response.id = this.id;
             response.email = this.email;
+            response.username = this.username;
+            response.fullName = this.fullName;
             response.firstName = this.firstName;
             response.lastName = this.lastName;
-            response.profilePictureUrl = this.profilePictureUrl;
+            response.bio = this.bio;
+            response.profileImageUrl = this.profileImageUrl;
             return response;
         }
     }

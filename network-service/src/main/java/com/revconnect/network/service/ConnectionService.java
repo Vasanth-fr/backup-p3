@@ -63,7 +63,7 @@ public class ConnectionService {
             connection.getId()
         );
 
-        return mapToResponse(connection);
+        return mapToResponse(connection, userId);
     }
 
     @Transactional
@@ -92,7 +92,7 @@ public class ConnectionService {
             connection.getId()
         );
 
-        return mapToResponse(connection);
+        return mapToResponse(connection, userId);
     }
 
     @Transactional
@@ -112,7 +112,7 @@ public class ConnectionService {
         connection.setStatus(ConnectionStatus.REJECTED);
         connection = connectionRepository.save(connection);
 
-        return mapToResponse(connection);
+        return mapToResponse(connection, userId);
     }
 
     @Transactional
@@ -145,7 +145,7 @@ public class ConnectionService {
         // Get all accepted connections where user is either initiator or receiver
         List<Connection> connections = connectionRepository.findConnectionsBetweenUsers(userId, ConnectionStatus.ACCEPTED);
         return connections.stream()
-                .map(this::mapToResponse)
+                .map(connection -> mapToResponse(connection, userId))
                 .collect(Collectors.toList());
     }
 
@@ -153,7 +153,14 @@ public class ConnectionService {
         // Get all pending requests received by the user
         List<Connection> pendingRequests = connectionRepository.findPendingRequestsForUser(userId);
         return pendingRequests.stream()
-                .map(this::mapToResponse)
+                .map(connection -> mapToResponse(connection, userId))
+                .collect(Collectors.toList());
+    }
+
+    public List<ConnectionResponse> getSentRequests(Long userId) {
+        List<Connection> sentRequests = connectionRepository.findPendingRequestsByUser(userId);
+        return sentRequests.stream()
+                .map(connection -> mapToResponse(connection, userId))
                 .collect(Collectors.toList());
     }
 
@@ -172,17 +179,20 @@ public class ConnectionService {
         return connectionRepository.countAcceptedConnections(userId);
     }
 
-    private ConnectionResponse mapToResponse(Connection connection) {
+    private ConnectionResponse mapToResponse(Connection connection, Long currentUserId) {
         // Fetch user details for the connected user
         UserDetails userDetails = null;
+        Long detailsUserId = connection.getUserId().equals(currentUserId)
+                ? connection.getConnectedUserId()
+                : connection.getUserId();
         try {
-            Long detailsUserId = connection.getConnectedUserId();
             userDetails = userClient.getUserDetails(detailsUserId);
         } catch (Exception e) {
             // Fallback will be handled by circuit breaker
             userDetails = new UserDetails();
-            userDetails.setId(connection.getConnectedUserId());
+            userDetails.setId(detailsUserId);
             userDetails.setUsername("Unknown User");
+            userDetails.setFullName("Unknown User");
         }
 
         return ConnectionResponse.builder()

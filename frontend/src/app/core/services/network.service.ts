@@ -2,7 +2,23 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Connection, Follow, User } from '../../shared/models/models';
+import { Follow, User } from '../../shared/models/models';
+
+export interface NetworkUserDetails {
+  id: number;
+  username?: string;
+  fullName?: string;
+  profileImageUrl?: string | null;
+}
+
+export interface NetworkConnection {
+  id: number;
+  userId: number;
+  connectedUserId: number;
+  status: string;
+  createdAt?: string;
+  userDetails: NetworkUserDetails;
+}
 
 @Injectable({ providedIn: 'root' })
 export class NetworkService {
@@ -14,32 +30,32 @@ export class NetworkService {
   // ================= CONNECTIONS =================
   // P3: all endpoints return data directly
 
-  getConnections(): Observable<Connection[]> {
-    return this.http.get<Connection[]>(`${this.API}/connections`);
+  getConnections(): Observable<NetworkConnection[]> {
+    return this.http.get<NetworkConnection[]>(`${this.API}/connections`);
   }
 
-  getPendingRequests(): Observable<Connection[]> {
-    return this.http.get<Connection[]>(`${this.API}/requests/received`);
+  getPendingRequests(): Observable<NetworkConnection[]> {
+    return this.http.get<NetworkConnection[]>(`${this.API}/pending`);
   }
 
-  getSentRequests(): Observable<Connection[]> {
-    return this.http.get<Connection[]>(`${this.API}/requests/sent`);
+  getSentRequests(): Observable<NetworkConnection[]> {
+    return this.http.get<NetworkConnection[]>(`${this.API}/sent`);
   }
 
-  sendRequest(userId: number): Observable<Connection> {
-    return this.http.post<Connection>(`${this.API}/connect/${userId}`, {});
+  sendRequest(userId: number): Observable<NetworkConnection> {
+    return this.http.post<NetworkConnection>(`${this.API}/connect`, { connectedUserId: userId });
   }
 
-  acceptRequest(connectionId: number): Observable<Connection> {
-    return this.http.put<Connection>(`${this.API}/connections/${connectionId}/accept`, {});
+  acceptRequest(connectionId: number): Observable<NetworkConnection> {
+    return this.http.put<NetworkConnection>(`${this.API}/connections/${connectionId}/accept`, {});
   }
 
-  rejectRequest(connectionId: number): Observable<Connection> {
-    return this.http.put<Connection>(`${this.API}/connections/${connectionId}/reject`, {});
+  rejectRequest(connectionId: number): Observable<NetworkConnection> {
+    return this.http.put<NetworkConnection>(`${this.API}/connections/${connectionId}/reject`, {});
   }
 
-  removeConnection(userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.API}/connect/${userId}`);
+  removeConnection(connectionId: number): Observable<void> {
+    return this.http.delete<void>(`${this.API}/connections/${connectionId}`);
   }
 
   // ================= FOLLOW =================

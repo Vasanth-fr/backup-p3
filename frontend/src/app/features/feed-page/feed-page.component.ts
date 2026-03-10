@@ -70,17 +70,22 @@ export class FeedPageComponent implements OnInit {
     this.page = 0;
     this.loading = true;
 
-    // P3: getUserPosts returns FeedResponse directly
-    this.postService.getUserPosts(this.currentUserId, this.page, 10)
-      .subscribe((res: FeedResponse) => {
-        this.posts = (res.posts ?? []).map(p => ({
-          ...p,
-          comments: [],
-          showComments: false,
-          newComment: ''
-        }));
-        this.lastPage = res.currentPage >= res.totalPages - 1;
-        this.loading = false;
+    this.postService.getFeed(this.page, 10)
+      .subscribe({
+        next: (res: FeedResponse) => {
+          this.posts = (res.posts ?? []).map(p => ({
+            ...p,
+            comments: [],
+            showComments: false,
+            newComment: ''
+          }));
+          this.lastPage = res.currentPage >= res.totalPages - 1;
+          this.loading = false;
+        },
+        error: () => {
+          this.posts = [];
+          this.loading = false;
+        }
       });
   }
 
@@ -99,17 +104,22 @@ export class FeedPageComponent implements OnInit {
     this.loadingMore = true;
     this.page++;
 
-    this.postService.getUserPosts(this.currentUserId, this.page, 10)
-      .subscribe((res: FeedResponse) => {
-        const newPosts = (res.posts ?? []).map(p => ({
-          ...p,
-          comments: [],
-          showComments: false,
-          newComment: ''
-        }));
-        this.posts = [...this.posts, ...newPosts];
-        this.lastPage = res.currentPage >= res.totalPages - 1;
-        this.loadingMore = false;
+    this.postService.getFeed(this.page, 10)
+      .subscribe({
+        next: (res: FeedResponse) => {
+          const newPosts = (res.posts ?? []).map(p => ({
+            ...p,
+            comments: [],
+            showComments: false,
+            newComment: ''
+          }));
+          this.posts = [...this.posts, ...newPosts];
+          this.lastPage = res.currentPage >= res.totalPages - 1;
+          this.loadingMore = false;
+        },
+        error: () => {
+          this.loadingMore = false;
+        }
       });
   }
 

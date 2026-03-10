@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, interval, Observable } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Notification } from '../../shared/models/models';
 
 // P3 NotificationCountResponse shape
 export interface NotificationCountResponse {
-  count: number;
+  total: number;
+  unread: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -21,19 +22,29 @@ export class NotificationService {
 
   // P3: returns List<NotificationResponse> directly (no PageResponse wrapper)
   getNotifications(): Observable<Notification[]> {
-    return this.http.get<Notification[]>(this.API);
+    return this.http.get<any[]>(this.API).pipe(
+      map(notifications => notifications.map(notification => ({
+        ...notification,
+        read: notification.read ?? notification.isRead ?? false
+      })))
+    );
   }
 
   // P3: GET /api/notifications/count  (was /unread-count in P2)
   getUnreadCount(): Observable<NotificationCountResponse> {
     return this.http.get<NotificationCountResponse>(`${this.API}/count`).pipe(
-      tap(res => this.unreadCount.next(res.count))
+      tap(res => this.unreadCount.next(res.unread ?? 0))
     );
   }
 
   // P3: PUT /api/notifications/{id}/read
   markAsRead(id: number): Observable<Notification> {
-    return this.http.put<Notification>(`${this.API}/${id}/read`, {});
+    return this.http.put<any>(`${this.API}/${id}/read`, {}).pipe(
+      map(notification => ({
+        ...notification,
+        read: notification.read ?? notification.isRead ?? true
+      }))
+    );
   }
 
   // P3: PUT /api/notifications/read-all

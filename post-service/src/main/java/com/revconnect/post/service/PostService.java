@@ -5,6 +5,7 @@ import com.revconnect.post.client.UserClient;
 import com.revconnect.post.dto.CreatePostRequest;
 import com.revconnect.post.dto.FeedResponse;
 import com.revconnect.post.dto.PostResponse;
+import com.revconnect.post.dto.PostResponse.AuthorResponse;
 import com.revconnect.post.dto.UpdatePostRequest;
 import com.revconnect.post.entity.Post;
 import com.revconnect.post.repository.PostRepository;
@@ -133,11 +134,13 @@ public class PostService {
         return PostResponse.builder()
                 .id(post.getId())
                 .userId(post.getUserId())
+                .author(getAuthor(post.getUserId()))
                 .content(post.getContent())
                 .imageUrl(post.getImageUrl())
                 .createdAt(post.getCreatedAt())
                 .likeCount(0L)
                 .commentCount(0L)
+                .likedByCurrentUser(false)
                 .build();
     }
 
@@ -147,12 +150,32 @@ public class PostService {
         return PostResponse.builder()
                 .id(post.getId())
                 .userId(post.getUserId())
+                .author(getAuthor(post.getUserId()))
                 .content(post.getContent())
                 .imageUrl(post.getImageUrl())
                 .createdAt(post.getCreatedAt())
                 .likeCount(counts.getOrDefault("likeCount", 0L))
                 .commentCount(counts.getOrDefault("commentCount", 0L))
+                .likedByCurrentUser(false)
                 .build();
+    }
+
+    private AuthorResponse getAuthor(Long userId) {
+        try {
+            Map<String, Object> user = userClient.getUserDetails(userId);
+            AuthorResponse author = new AuthorResponse();
+            author.setId(userId);
+            author.setEmail((String) user.get("email"));
+            author.setUsername((String) user.get("username"));
+            author.setFullName((String) user.get("fullName"));
+            return author;
+        } catch (Exception e) {
+            AuthorResponse fallback = new AuthorResponse();
+            fallback.setId(userId);
+            fallback.setUsername("user" + userId);
+            fallback.setFullName("User " + userId);
+            return fallback;
+        }
     }
 
     @CircuitBreaker(name = "interactionService", fallbackMethod = "getInteractionCountsFallback")
