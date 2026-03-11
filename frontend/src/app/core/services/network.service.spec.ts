@@ -39,8 +39,9 @@ describe('NetworkService', () => {
 
     service.sendRequest(1).subscribe();
 
-    const req = httpMock.expectOne(`${API}/connect/1`);
+    const req = httpMock.expectOne(`${API}/connect`);
     expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ connectedUserId: 1 });
 
   });
 

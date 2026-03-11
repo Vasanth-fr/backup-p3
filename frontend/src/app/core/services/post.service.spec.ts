@@ -10,6 +10,7 @@ describe('PostService', () => {
   let httpMock: HttpTestingController;
 
   const API = `${environment.apiUrl}/posts`;
+  const INTERACTION_API = `${environment.apiUrl}/interactions`;
 
   beforeEach(() => {
 
@@ -39,8 +40,9 @@ describe('PostService', () => {
 
     service.likePost(1).subscribe();
 
-    const req = httpMock.expectOne(`${API}/1/like`);
+    const req = httpMock.expectOne(`${INTERACTION_API}/likes`);
     expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ postId: 1 });
 
   });
 

@@ -37,10 +37,27 @@ describe('UserService', () => {
 
   it('should update profile', () => {
 
-    service.updateProfile(1, {}).subscribe();
+    service.updateProfile({}).subscribe();
 
-    const req = httpMock.expectOne(`${API}/1`);
+    const req = httpMock.expectOne(`${API}/profile`);
     expect(req.request.method).toBe('PUT');
+
+  });
+
+  it('should search users from the users endpoint', () => {
+
+    service.searchUsers('alex').subscribe(users => {
+      expect(users.length).toBe(1);
+      expect(users[0].email).toBe('alex@example.com');
+    });
+
+    const req = httpMock.expectOne(API);
+    expect(req.request.method).toBe('GET');
+
+    req.flush([
+      { id: 1, email: 'alex@example.com', firstName: 'Alex' },
+      { id: 2, email: 'sam@example.com', firstName: 'Sam' }
+    ]);
 
   });
 

@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { NetworkConnection, NetworkService } from '../../../core/services/network.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserSummaryResponse, UserService } from '../../../core/services/user.service';
@@ -36,29 +38,23 @@ export class ConnectionsComponent implements OnInit {
 
   loadAll(): void {
     this.loading = true;
-
-    this.networkService.getConnections().subscribe(connections => {
+    forkJoin({
+      connections: this.networkService.getConnections().pipe(catchError(() => of([]))),
+      pendingRequests: this.networkService.getPendingRequests().pipe(catchError(() => of([]))),
+      sentRequests: this.networkService.getSentRequests().pipe(catchError(() => of([]))),
+      users: this.userService.searchUsers('').pipe(catchError(() => of([])))
+    }).subscribe(({ connections, pendingRequests, sentRequests, users }) => {
       this.connections = connections ?? [];
-    });
-
-    this.networkService.getPendingRequests().subscribe(requests => {
-      this.pendingRequests = requests ?? [];
-    });
-
-    this.networkService.getSentRequests().subscribe(requests => {
-      this.sentRequests = requests ?? [];
+      this.pendingRequests = pendingRequests ?? [];
+      this.sentRequests = sentRequests ?? [];
+      this.sentUserIds.clear();
       this.sentRequests.forEach(req => {
-        if (req.userDetails?.id) this.sentUserIds.add(req.userDetails.id);
+        if (req.userDetails?.id) {
+          this.sentUserIds.add(req.userDetails.id);
+        }
       });
-    });
-
-    // Use search with empty query to get all users for discover tab
-    this.userService.searchUsers('').subscribe({
-      next: users => {
-        this.allUsers = (users ?? []).filter(u => u.id !== this.currentUserId);
-        this.loading = false;
-      },
-      error: () => { this.loading = false; }
+      this.allUsers = (users ?? []).filter(u => u.id !== this.currentUserId);
+      this.loading = false;
     });
   }
 
@@ -72,15 +68,17 @@ export class ConnectionsComponent implements OnInit {
   }
 
   sendRequest(user: UserSummaryResponse): void {
-    this.networkService.sendRequest(user.id).subscribe(() => {
+    this.networkService.sendRequest(user.id).subscribe(connection => {
       this.sentUserIds.add(user.id);
+      this.sentRequests = [connection, ...this.sentRequests.filter(req => req.id !== connection.id)];
     });
   }
 
   accept(c: NetworkConnection): void {
     this.networkService.acceptRequest(c.id).subscribe(connection => {
       this.pendingRequests = this.pendingRequests.filter(r => r.id !== c.id);
-      this.connections.push(connection);
+      this.sentUserIds.delete(connection.userDetails?.id ?? c.userDetails?.id ?? 0);
+      this.connections = [connection, ...this.connections.filter(existing => existing.id !== connection.id)];
     });
   }
 
@@ -93,6 +91,9 @@ export class ConnectionsComponent implements OnInit {
   removeConnection(c: NetworkConnection): void {
     this.networkService.removeConnection(c.id).subscribe(() => {
       this.connections = this.connections.filter(conn => conn.id !== c.id);
+      if (c.userDetails?.id) {
+        this.sentUserIds.delete(c.userDetails.id);
+      }
     });
   }
 
@@ -101,6 +102,7 @@ export class ConnectionsComponent implements OnInit {
     if (!connection) return;
     this.networkService.removeConnection(connection.id).subscribe(() => {
       this.connections = this.connections.filter(c => c.id !== connection.id);
+      this.sentUserIds.delete(userId);
     });
   }
 

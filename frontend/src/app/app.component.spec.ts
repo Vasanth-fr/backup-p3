@@ -13,14 +13,14 @@ describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
 
   let notificationServiceSpy: jasmine.SpyObj<NotificationService>;
-
-  let userSubject = new BehaviorSubject<any>(null);
-
-  const authServiceMock = {
-    currentUser$: userSubject.asObservable()
-  };
+  let userSubject: BehaviorSubject<any>;
+  let authServiceMock: { currentUser$: any };
 
   beforeEach(async () => {
+    userSubject = new BehaviorSubject<any>(null);
+    authServiceMock = {
+      currentUser$: userSubject.asObservable()
+    };
 
     notificationServiceSpy = jasmine.createSpyObj(
       'NotificationService',

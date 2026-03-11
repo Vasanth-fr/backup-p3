@@ -30,7 +30,7 @@ describe('NotificationService', () => {
 
     service.getNotifications().subscribe();
 
-    const req = httpMock.expectOne(`${API}?page=0&size=20`);
+    const req = httpMock.expectOne(API);
     expect(req.request.method).toBe('GET');
 
   });

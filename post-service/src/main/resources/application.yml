@@ -6,7 +6,7 @@ spring:
     name: post-service
 
   datasource:
-    url: jdbc:h2:mem:postdb
+    url: jdbc:h2:file:./data/postdb;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:

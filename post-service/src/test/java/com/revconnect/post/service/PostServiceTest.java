@@ -75,7 +75,6 @@ class PostServiceTest {
         when(postRepository.findById(1L)).thenReturn(Optional.of(samplePost));
         when(postRepository.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
         when(userClient.getUserDetails(anyLong())).thenReturn(Map.of("username", "alice"));
-        when(interactionClient.getInteractionCounts(anyLong())).thenReturn(Map.of("likeCount", 0L, "commentCount", 0L));
 
         PostResponse response = postService.updatePost(1L, 10L, req);
 

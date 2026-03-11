@@ -6,55 +6,29 @@ import { NotificationListComponent } from './notification-list.component';
 import { NotificationService } from '../../../core/services/notification.service';
 
 describe('NotificationListComponent', () => {
-
   let component: NotificationListComponent;
   let fixture: ComponentFixture<NotificationListComponent>;
   let notificationServiceSpy: jasmine.SpyObj<NotificationService>;
 
-  const mockApi = (data: any) => ({
-    success: true,
-    data,
-    statusCode: 200,
-    timestamp: new Date().toISOString()
-  });
-
   beforeEach(async () => {
-
     notificationServiceSpy = jasmine.createSpyObj('NotificationService', [
       'getNotifications',
       'markAsRead',
-      'markAllAsRead'
+      'markAllAsRead',
+      'deleteNotification'
     ]);
 
+    notificationServiceSpy.getNotifications.and.returnValue(of([]));
+
     await TestBed.configureTestingModule({
-
-      imports: [
-        RouterTestingModule
-      ],
-
-      declarations: [
-        NotificationListComponent
-      ],
-
-      providers: [
-        { provide: NotificationService, useValue: notificationServiceSpy }
-      ]
-
+      imports: [RouterTestingModule],
+      declarations: [NotificationListComponent],
+      providers: [{ provide: NotificationService, useValue: notificationServiceSpy }]
     }).compileComponents();
-
-  });
-
-  beforeEach(() => {
-
-    notificationServiceSpy.getNotifications.and.returnValue(
-      of(mockApi({ content: [] }))
-    );
 
     fixture = TestBed.createComponent(NotificationListComponent);
     component = fixture.componentInstance;
-
     fixture.detectChanges();
-
   });
 
   it('should create component', () => {
@@ -66,28 +40,28 @@ describe('NotificationListComponent', () => {
   });
 
   it('should return unread count', () => {
-
     component.notifications = [
       { id: 1, read: false } as any,
       { id: 2, read: true } as any
     ];
 
     expect(component.getUnreadCount()).toBe(1);
-
   });
 
   it('should mark notification as read', () => {
+    notificationServiceSpy.markAsRead.and.returnValue(of({
+      id: 1,
+      recipientId: 1,
+      type: 'CONNECTION_REQUEST',
+      message: 'Connection request',
+      read: true,
+      createdAt: new Date().toISOString()
+    }));
 
-    notificationServiceSpy.markAsRead.and.returnValue(
-      of(mockApi(null))
-    );
-
-    const notif: any = { id: 1, read: false };
-
+    const notif: any = { id: 1, read: false, type: 'CONNECTION_REQUEST', message: 'Connection request' };
     component.markRead(notif);
 
     expect(notificationServiceSpy.markAsRead).toHaveBeenCalledWith(1);
-
+    expect(notif.read).toBeTrue();
   });
-
 });

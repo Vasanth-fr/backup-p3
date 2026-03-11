@@ -22,7 +22,12 @@
         <module>config-server</module>
         <module>discovery-server</module>
         <module>api-gateway</module>
+        <module>auth-service</module>
+        <module>user-service</module>
+        <module>post-service</module>
+        <module>network-service</module>
         <module>interaction-service</module>
+        <module>notification-service</module>
     </modules>
 
     <properties>

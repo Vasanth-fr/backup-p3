@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { User, UserRole, PrivacyType } from '../../shared/models/models';
@@ -66,7 +66,29 @@ export class UserService {
 
   // ================= SEARCH USERS =================
   searchUsers(query: string): Observable<UserSummaryResponse[]> {
-    return this.http.get<UserSummaryResponse[]>(`${this.API}/search?query=${query}`);
+    return this.http.get<UserSummaryResponse[]>(this.API).pipe(
+      map(users => {
+        const normalizedQuery = query.trim().toLowerCase();
+
+        if (!normalizedQuery) {
+          return users ?? [];
+        }
+
+        return (users ?? []).filter(user => {
+          const searchableFields = [
+            user.fullName,
+            user.firstName,
+            user.lastName,
+            user.username,
+            user.email
+          ]
+            .filter((value): value is string => !!value)
+            .map(value => value.toLowerCase());
+
+          return searchableFields.some(value => value.includes(normalizedQuery));
+        });
+      })
+    );
   }
 
   // ================= FOLLOW / UNFOLLOW =================

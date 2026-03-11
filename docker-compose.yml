@@ -180,6 +180,7 @@ services:
       - "8083:8083"
     volumes:
       - post-service-logs:/app/logs
+      - post-service-data:/app/data
     networks:
       - revconnect-network
     environment:
@@ -326,6 +327,7 @@ volumes:
   auth-service-logs:
   user-service-logs:
   post-service-logs:
+  post-service-data:
   network-service-logs:
   interaction-service-logs:
   notification-service-logs:
