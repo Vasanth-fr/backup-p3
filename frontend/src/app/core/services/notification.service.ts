@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, interval, Observable } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, EMPTY, interval, Observable, Subscription } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Notification } from '../../shared/models/models';
 
@@ -16,6 +16,7 @@ export class NotificationService {
 
   private readonly API = `${environment.apiUrl}/notifications`;
   private unreadCount = new BehaviorSubject<number>(0);
+  private pollingSubscription?: Subscription;
   unreadCount$ = this.unreadCount.asObservable();
 
   constructor(private http: HttpClient) {}
@@ -59,8 +60,18 @@ export class NotificationService {
 
   // Poll for new notifications every 30 seconds
   startPolling(): void {
-    interval(30000).pipe(
-      switchMap(() => this.getUnreadCount())
+    if (this.pollingSubscription) {
+      return;
+    }
+
+    this.pollingSubscription = interval(30000).pipe(
+      switchMap(() => this.getUnreadCount().pipe(catchError(() => EMPTY)))
     ).subscribe();
+  }
+
+  stopPolling(): void {
+    this.pollingSubscription?.unsubscribe();
+    this.pollingSubscription = undefined;
+    this.unreadCount.next(0);
   }
 }

@@ -41,8 +41,10 @@ class AuthServiceTest {
     void setUp() {
         testUser = User.builder()
                 .id(1L).email("alice@example.com")
+                .username("alice")
                 .password("encoded-password")
                 .firstName("Alice").lastName("Smith")
+                .accountType("PERSONAL")
                 .build();
 
         testRefreshToken = RefreshToken.builder()
@@ -58,9 +60,11 @@ class AuthServiceTest {
     void register_happyPath_returnsAuthResponse() {
         RegisterRequest req = RegisterRequest.builder()
                 .email("alice@example.com").password("password1")
-                .firstName("Alice").lastName("Smith").build();
+                .firstName("Alice").lastName("Smith")
+                .username("alice").accountType("PERSONAL").build();
 
         when(userRepository.existsByEmail(req.getEmail())).thenReturn(false);
+        when(userRepository.existsByUsername(req.getUsername())).thenReturn(false);
         when(passwordEncoder.encode(req.getPassword())).thenReturn("encoded-password");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
         when(jwtService.generateToken(anyLong(), anyString())).thenReturn("access-token");
@@ -81,7 +85,8 @@ class AuthServiceTest {
     @DisplayName("register - duplicate email throws RuntimeException")
     void register_duplicateEmail_throwsException() {
         RegisterRequest req = RegisterRequest.builder()
-                .email("alice@example.com").password("pw").firstName("A").lastName("S").build();
+                .email("alice@example.com").password("pw").firstName("A").lastName("S")
+                .username("alice").accountType("PERSONAL").build();
 
         when(userRepository.existsByEmail("alice@example.com")).thenReturn(true);
 
@@ -98,7 +103,7 @@ class AuthServiceTest {
     @DisplayName("login - correct credentials return tokens")
     void login_correctCredentials_returnsAuthResponse() {
         LoginRequest req = LoginRequest.builder()
-                .email("alice@example.com").password("password1").build();
+                .identifier("alice@example.com").password("password1").build();
 
         when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("password1", "encoded-password")).thenReturn(true);
@@ -113,10 +118,10 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("login - unknown email throws RuntimeException")
-    void login_unknownEmail_throwsException() {
+    @DisplayName("login - unknown identifier throws RuntimeException")
+    void login_unknownIdentifier_throwsException() {
         LoginRequest req = LoginRequest.builder()
-                .email("nobody@example.com").password("pw").build();
+                .identifier("nobody@example.com").password("pw").build();
 
         when(userRepository.findByEmail("nobody@example.com")).thenReturn(Optional.empty());
 
@@ -129,14 +134,32 @@ class AuthServiceTest {
     @DisplayName("login - wrong password throws RuntimeException")
     void login_wrongPassword_throwsException() {
         LoginRequest req = LoginRequest.builder()
-                .email("alice@example.com").password("wrong").build();
+                .identifier("alice").password("wrong").build();
 
-        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("wrong", "encoded-password")).thenReturn(false);
 
         assertThatThrownBy(() -> authService.login(req))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Invalid email or password");
+    }
+
+    @Test
+    @DisplayName("login - username works the same as email")
+    void login_username_returnsAuthResponse() {
+        LoginRequest req = LoginRequest.builder()
+                .identifier("alice").password("password1").build();
+
+        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("password1", "encoded-password")).thenReturn(true);
+        when(jwtService.generateToken(1L, "alice@example.com")).thenReturn("access-token");
+        when(refreshTokenService.createRefreshToken(1L)).thenReturn(testRefreshToken);
+        when(restTemplate.postForEntity(anyString(), any(), eq(Void.class))).thenReturn(null);
+
+        AuthResponse response = authService.login(req);
+
+        assertThat(response.getAccessToken()).isEqualTo("access-token");
+        assertThat(response.getUserId()).isEqualTo(1L);
     }
 
     // ── Refresh ───────────────────────────────────────────────────────

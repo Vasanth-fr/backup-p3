@@ -77,7 +77,7 @@ class PostControllerTest {
                 .likeCount(2L).commentCount(1L)
                 .createdAt(LocalDateTime.now()).build();
 
-        when(postService.getPost(1L)).thenReturn(response);
+        when(postService.getPost(1L, null)).thenReturn(response);
 
         mockMvc.perform(get("/api/posts/1"))
                 .andExpect(status().isOk())
@@ -93,7 +93,7 @@ class PostControllerTest {
         FeedResponse feed = FeedResponse.builder()
                 .posts(List.of(p)).currentPage(0).totalPages(1).totalElements(1).pageSize(20).build();
 
-        when(postService.getUserPosts(eq(5L), eq(0), eq(20))).thenReturn(feed);
+        when(postService.getUserPosts(eq(5L), isNull(), eq(0), eq(20))).thenReturn(feed);
 
         mockMvc.perform(get("/api/posts/user/5"))
                 .andExpect(status().isOk())

@@ -17,13 +17,13 @@
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
 
         <div class="mb-3">
-          <label class="form-label fw-semibold">Email</label>
+          <label class="form-label fw-semibold">Username or Email</label>
           <input
-            type="email"
+            type="text"
             class="form-control"
-            formControlName="email"
-            placeholder="Enter your email"
-            [class.is-invalid]="f['email'].touched && f['email'].invalid"
+            formControlName="identifier"
+            placeholder="Enter your username or email"
+            [class.is-invalid]="f['identifier'].touched && f['identifier'].invalid"
           />
         </div>
 

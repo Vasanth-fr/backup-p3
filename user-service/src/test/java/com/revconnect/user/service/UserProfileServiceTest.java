@@ -121,6 +121,24 @@ class UserProfileServiceTest {
         assertThat(response.getFirstName()).isEqualTo("Alicia");
     }
 
+    @Test
+    @DisplayName("syncUser - replaces stale email match when auth user id changes")
+    void syncUser_existingEmailWithDifferentId_replacesStaleProfile() {
+        SyncUserRequest req = new SyncUserRequest();
+        req.setId(10L); req.setEmail("alice@example.com");
+        req.setFirstName("Alice"); req.setLastName("Smith");
+
+        when(userProfileRepository.findById(10L)).thenReturn(Optional.empty());
+        when(userProfileRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(sampleProfile));
+        when(userProfileRepository.save(any(UserProfile.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UserSummaryResponse response = userProfileService.syncUser(req);
+
+        assertThat(response.getId()).isEqualTo(10L);
+        verify(userProfileRepository).delete(sampleProfile);
+        verify(userProfileRepository).save(any(UserProfile.class));
+    }
+
     // ── updateProfile ─────────────────────────────────────────────────
 
     @Test

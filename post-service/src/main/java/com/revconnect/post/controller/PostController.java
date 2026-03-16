@@ -56,19 +56,22 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<PostResponse> getPost(@PathVariable Long postId) {
+    public ResponseEntity<PostResponse> getPost(
+            @PathVariable Long postId,
+            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId) {
         log.debug("Fetching postId={}", postId);
-        PostResponse response = postService.getPost(postId);
+        PostResponse response = postService.getPost(postId, currentUserId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<FeedResponse> getUserPosts(
             @PathVariable Long userId,
+            @RequestHeader(value = "X-User-Id", required = false) Long currentUserId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         log.debug("Fetching posts for userId={}, page={}, size={}", userId, page, size);
-        FeedResponse response = postService.getUserPosts(userId, page, size);
+        FeedResponse response = postService.getUserPosts(userId, currentUserId, page, size);
         log.debug("Returned {} posts for userId={}", response.getPosts() != null ? response.getPosts().size() : 0, userId);
         return ResponseEntity.ok(response);
     }

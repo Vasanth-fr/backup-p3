@@ -53,14 +53,14 @@ export interface RegisterRequest {
   email: string;
   password: string;
   firstName: string;
-  lastName: string;
+  lastName?: string;
   username: string;
-  accountType: UserRole;   // ✅ ADDED
+  accountType: UserRole;
 
 }
 
 export interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 

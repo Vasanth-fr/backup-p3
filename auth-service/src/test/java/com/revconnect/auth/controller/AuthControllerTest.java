@@ -96,7 +96,7 @@ class AuthControllerTest {
     void login_validCredentials_returns200() throws Exception {
 
         LoginRequest req = LoginRequest.builder()
-                .email("alice@example.com")
+                .identifier("alice@example.com")
                 .password("password1")
                 .build();
 
@@ -123,7 +123,7 @@ class AuthControllerTest {
     @DisplayName("POST /api/auth/login - missing password returns 400")
     void login_missingPassword_returns400() throws Exception {
 
-        String body = "{\"email\":\"alice@example.com\"}";
+        String body = "{\"identifier\":\"alice@example.com\"}";
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

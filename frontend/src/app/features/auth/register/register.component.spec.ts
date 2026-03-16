@@ -57,10 +57,12 @@ describe('RegisterComponent', () => {
     );
 
     component.registerForm.setValue({
-      email: 'test@test.com',
-      password: 'password123',
       firstName: 'Test',
-      lastName: 'User'
+      lastName: '',
+      username: 'testuser',
+      accountType: 'PERSONAL',
+      email: 'test@test.com',
+      password: 'password123'
     });
 
     component.onSubmit();

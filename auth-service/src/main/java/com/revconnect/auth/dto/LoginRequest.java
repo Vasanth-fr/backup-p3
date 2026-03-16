@@ -1,13 +1,11 @@
 package com.revconnect.auth.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public class LoginRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    private String email;
+    @NotBlank(message = "Username or email is required")
+    private String identifier;
 
     @NotBlank(message = "Password is required")
     private String password;
@@ -16,7 +14,7 @@ public class LoginRequest {
     }
 
     private LoginRequest(Builder builder) {
-        this.email = builder.email;
+        this.identifier = builder.identifier;
         this.password = builder.password;
     }
 
@@ -24,12 +22,12 @@ public class LoginRequest {
         return new Builder();
     }
 
-    public String getEmail() {
-        return email;
+    public String getIdentifier() {
+        return identifier;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public String getPassword() {
@@ -41,11 +39,11 @@ public class LoginRequest {
     }
 
     public static class Builder {
-        private String email;
+        private String identifier;
         private String password;
 
-        public Builder email(String email) {
-            this.email = email;
+        public Builder identifier(String identifier) {
+            this.identifier = identifier;
             return this;
         }
 

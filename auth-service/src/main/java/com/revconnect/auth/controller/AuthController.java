@@ -39,13 +39,13 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login attempt for email: {}", request.getEmail());
+        log.info("Login attempt for identifier: {}", request.getIdentifier());
         try {
             AuthResponse response = authService.login(request);
             log.info("Login successful: userId={}, email={}", response.getUserId(), response.getEmail());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            log.warn("Login failed for email={}: {}", request.getEmail(), e.getMessage());
+            log.warn("Login failed for identifier={}: {}", request.getIdentifier(), e.getMessage());
             throw new RuntimeException("Login failed: " + e.getMessage());
         }
     }

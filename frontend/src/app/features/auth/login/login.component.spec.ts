@@ -62,7 +62,7 @@ describe('LoginComponent', () => {
     );
 
     component.loginForm.setValue({
-      email: 'john@test.com',
+      identifier: 'john@test.com',
       password: 'password123'
     });
 
@@ -79,7 +79,7 @@ describe('LoginComponent', () => {
     );
 
     component.loginForm.setValue({
-      email: 'john@test.com',
+      identifier: 'john@test.com',
       password: 'password123'
     });
 

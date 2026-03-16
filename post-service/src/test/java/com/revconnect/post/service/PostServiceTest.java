@@ -133,12 +133,14 @@ class PostServiceTest {
         when(postRepository.findById(1L)).thenReturn(Optional.of(samplePost));
         when(userClient.getUserDetails(anyLong())).thenReturn(Map.of("username", "alice"));
         when(interactionClient.getInteractionCounts(1L)).thenReturn(Map.of("likeCount", 5L, "commentCount", 3L));
+        when(interactionClient.checkUserLiked(1L, 10L)).thenReturn(Map.of("hasLiked", true, "likeCount", 5L));
 
-        PostResponse response = postService.getPost(1L);
+        PostResponse response = postService.getPost(1L, 10L);
 
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getLikeCount()).isEqualTo(5L);
         assertThat(response.getCommentCount()).isEqualTo(3L);
+        assertThat(response.getLikedByCurrentUser()).isTrue();
     }
 
     @Test
@@ -146,7 +148,7 @@ class PostServiceTest {
     void getPost_notFound_throwsException() {
         when(postRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.getPost(999L))
+        assertThatThrownBy(() -> postService.getPost(999L, 10L))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Post not found");
     }
@@ -160,12 +162,30 @@ class PostServiceTest {
         when(postRepository.findByUserIdOrderByCreatedAtDesc(eq(10L), any(Pageable.class))).thenReturn(page);
         when(userClient.getUserDetails(anyLong())).thenReturn(Map.of("username", "alice"));
         when(interactionClient.getInteractionCounts(anyLong())).thenReturn(Map.of("likeCount", 0L, "commentCount", 0L));
+        when(interactionClient.checkUserLiked(anyLong(), anyLong())).thenReturn(Map.of("hasLiked", false, "likeCount", 0L));
 
-        FeedResponse response = postService.getUserPosts(10L, 0, 20);
+        FeedResponse response = postService.getUserPosts(10L, 99L, 0, 20);
 
         assertThat(response.getPosts()).hasSize(1);
         assertThat(response.getTotalElements()).isEqualTo(1);
         assertThat(response.getCurrentPage()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("getUserPosts - falls back to zero counts when interaction-service call fails")
+    void getUserPosts_interactionFailure_returnsPosts() {
+        Page<Post> page = new PageImpl<>(List.of(samplePost), PageRequest.of(0, 20), 1);
+        when(postRepository.findByUserIdOrderByCreatedAtDesc(eq(10L), any(Pageable.class))).thenReturn(page);
+        when(userClient.getUserDetails(anyLong())).thenReturn(Map.of("username", "alice"));
+        when(interactionClient.getInteractionCounts(anyLong())).thenThrow(new RuntimeException("forbidden"));
+        when(interactionClient.checkUserLiked(anyLong(), anyLong())).thenReturn(Map.of("hasLiked", true, "likeCount", 1L));
+
+        FeedResponse response = postService.getUserPosts(10L, 99L, 0, 20);
+
+        assertThat(response.getPosts()).hasSize(1);
+        assertThat(response.getPosts().get(0).getLikeCount()).isZero();
+        assertThat(response.getPosts().get(0).getCommentCount()).isZero();
+        assertThat(response.getPosts().get(0).getLikedByCurrentUser()).isTrue();
     }
 
     @Test
@@ -174,7 +194,7 @@ class PostServiceTest {
         Page<Post> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
         when(postRepository.findByUserIdOrderByCreatedAtDesc(eq(10L), any(Pageable.class))).thenReturn(emptyPage);
 
-        FeedResponse response = postService.getUserPosts(10L, 0, 20);
+        FeedResponse response = postService.getUserPosts(10L, 99L, 0, 20);
 
         assertThat(response.getPosts()).isEmpty();
         assertThat(response.getTotalElements()).isEqualTo(0);

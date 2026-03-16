@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { EMPTY } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-navbar',
@@ -32,7 +34,9 @@ export class NavbarComponent implements OnInit {
     });
 
     if (this.authService.isLoggedIn()) {
-      this.notificationService.getUnreadCount().subscribe();
+      this.notificationService.getUnreadCount().pipe(
+        catchError(() => EMPTY)
+      ).subscribe();
     }
   }
 

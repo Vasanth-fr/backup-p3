@@ -23,6 +23,8 @@ export class AppComponent implements OnInit {
       this.isLoggedIn = !!user;
       if (user) {
         this.notificationService.startPolling();
+      } else {
+        this.notificationService.stopPolling();
       }
     });
   }

@@ -1,5 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { Subject, debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { PostService } from '../../core/services/post.service';
 import { UserService, UserSummaryResponse } from '../../core/services/user.service';
@@ -140,14 +141,29 @@ export class FeedPageComponent implements OnInit {
 
   toggleLike(post: any): void {
     if (post.likedByCurrentUser) {
-      this.postService.unlikePost(post.id).subscribe(() => {
-        post.likedByCurrentUser = false;
-        if (post.likeCount > 0) post.likeCount--;
+      this.postService.unlikePost(post.id).subscribe({
+        next: () => {
+          post.likedByCurrentUser = false;
+          if (post.likeCount > 0) post.likeCount--;
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 404) {
+            post.likedByCurrentUser = false;
+            if (post.likeCount > 0) post.likeCount--;
+          }
+        }
       });
     } else {
-      this.postService.likePost(post.id).subscribe(() => {
-        post.likedByCurrentUser = true;
-        post.likeCount++;
+      this.postService.likePost(post.id).subscribe({
+        next: () => {
+          post.likedByCurrentUser = true;
+          post.likeCount++;
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 409) {
+            post.likedByCurrentUser = true;
+          }
+        }
       });
     }
   }

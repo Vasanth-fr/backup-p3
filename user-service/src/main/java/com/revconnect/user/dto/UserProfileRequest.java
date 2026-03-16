@@ -8,7 +8,6 @@ public class UserProfileRequest {
     @NotBlank(message = "First name is required")
     private String firstName;
 
-    @NotBlank(message = "Last name is required")
     private String lastName;
 
     @Size(max = 500, message = "Bio cannot exceed 500 characters")

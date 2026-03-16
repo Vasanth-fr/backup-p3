@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -171,14 +172,29 @@ export class ProfileViewComponent implements OnInit {
 
   toggleLike(post: any): void {
     if (post.likedByCurrentUser) {
-      this.postService.unlikePost(post.id).subscribe(() => {
-        post.likedByCurrentUser = false;
-        if (post.likeCount > 0) post.likeCount--;
+      this.postService.unlikePost(post.id).subscribe({
+        next: () => {
+          post.likedByCurrentUser = false;
+          if (post.likeCount > 0) post.likeCount--;
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 404) {
+            post.likedByCurrentUser = false;
+            if (post.likeCount > 0) post.likeCount--;
+          }
+        }
       });
     } else {
-      this.postService.likePost(post.id).subscribe(() => {
-        post.likedByCurrentUser = true;
-        post.likeCount++;
+      this.postService.likePost(post.id).subscribe({
+        next: () => {
+          post.likedByCurrentUser = true;
+          post.likeCount++;
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 409) {
+            post.likedByCurrentUser = true;
+          }
+        }
       });
     }
   }

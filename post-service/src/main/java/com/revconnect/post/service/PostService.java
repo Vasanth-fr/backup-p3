@@ -9,7 +9,6 @@ import com.revconnect.post.dto.PostResponse.AuthorResponse;
 import com.revconnect.post.dto.UpdatePostRequest;
 import com.revconnect.post.entity.Post;
 import com.revconnect.post.repository.PostRepository;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -81,20 +80,20 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostResponse getPost(Long postId) {
+    public PostResponse getPost(Long postId, Long currentUserId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        return mapToPostResponseWithCounts(post);
+        return mapToPostResponseWithCounts(post, currentUserId);
     }
 
     @Transactional(readOnly = true)
-    public FeedResponse getUserPosts(Long userId, int page, int size) {
+    public FeedResponse getUserPosts(Long userId, Long currentUserId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postPage = postRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
         List<PostResponse> postResponses = postPage.getContent().stream()
-                .map(this::mapToPostResponseWithCounts)
+                .map(post -> mapToPostResponseWithCounts(post, currentUserId))
                 .collect(Collectors.toList());
 
         return FeedResponse.builder()
@@ -118,7 +117,7 @@ public class PostService {
         Page<Post> postPage = postRepository.findByUserIdInOrderByCreatedAtDesc(followedUserIds, pageable);
 
         List<PostResponse> postResponses = postPage.getContent().stream()
-                .map(this::mapToPostResponseWithCounts)
+                .map(post -> mapToPostResponseWithCounts(post, userId))
                 .collect(Collectors.toList());
 
         return FeedResponse.builder()
@@ -144,8 +143,9 @@ public class PostService {
                 .build();
     }
 
-    private PostResponse mapToPostResponseWithCounts(Post post) {
+    private PostResponse mapToPostResponseWithCounts(Post post, Long currentUserId) {
         Map<String, Long> counts = getInteractionCounts(post.getId());
+        boolean likedByCurrentUser = hasCurrentUserLiked(post.getId(), currentUserId);
 
         return PostResponse.builder()
                 .id(post.getId())
@@ -156,7 +156,7 @@ public class PostService {
                 .createdAt(post.getCreatedAt())
                 .likeCount(counts.getOrDefault("likeCount", 0L))
                 .commentCount(counts.getOrDefault("commentCount", 0L))
-                .likedByCurrentUser(false)
+                .likedByCurrentUser(likedByCurrentUser)
                 .build();
     }
 
@@ -178,23 +178,30 @@ public class PostService {
         }
     }
 
-    @CircuitBreaker(name = "interactionService", fallbackMethod = "getInteractionCountsFallback")
     private Map<String, Long> getInteractionCounts(Long postId) {
-        return interactionClient.getInteractionCounts(postId);
+        try {
+            return interactionClient.getInteractionCounts(postId);
+        } catch (Exception e) {
+            return Map.of("likeCount", 0L, "commentCount", 0L);
+        }
     }
 
-    private Map<String, Long> getInteractionCountsFallback(Long postId, Throwable throwable) {
-        return Map.of("likeCount", 0L, "commentCount", 0L);
+    private boolean hasCurrentUserLiked(Long postId, Long currentUserId) {
+        if (currentUserId == null) {
+            return false;
+        }
+
+        try {
+            Object hasLiked = interactionClient.checkUserLiked(postId, currentUserId).get("hasLiked");
+            return hasLiked instanceof Boolean liked && liked;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
-    @CircuitBreaker(name = "userService", fallbackMethod = "getFollowedUserIdsFallback")
     private List<Long> getFollowedUserIds(Long userId) {
-        // This would call network-service to get the list of users that the current user follows
-        // For now, returning empty list as network-service integration is pending
-        return new ArrayList<>();
-    }
-
-    private List<Long> getFollowedUserIdsFallback(Long userId, Throwable throwable) {
+        // Network-service feed integration is not wired yet, so we fall back
+        // to the current user's own posts instead of failing the entire feed.
         return new ArrayList<>();
     }
 }

@@ -22,7 +22,7 @@ export class LoginComponent {
   // ================= LOGIN FORM =================
 
   loginForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    identifier: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(8)]]
   });
 
@@ -37,14 +37,14 @@ export class LoginComponent {
     this.error = '';
 
     // P3: login returns AuthResponse directly (accessToken, refreshToken, userId, email)
-    const { email, password } = this.loginForm.getRawValue();
+    const { identifier, password } = this.loginForm.getRawValue();
 
-    this.authService.login({ email: email ?? '', password: password ?? '' }).subscribe({
+    this.authService.login({ identifier: identifier ?? '', password: password ?? '' }).subscribe({
       next: () => {
         this.router.navigate(['/feed'], { replaceUrl: true });
       },
       error: (err) => {
-        this.error = err.error?.message || 'Invalid email or password';
+        this.error = err.error?.message || 'Invalid username/email or password';
         this.loading = false;
       }
     });

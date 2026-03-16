@@ -16,7 +16,6 @@ public class SyncUserRequest {
     @NotBlank(message = "First name is required")
     private String firstName;
 
-    @NotBlank(message = "Last name is required")
     private String lastName;
 
     public Long getId() {

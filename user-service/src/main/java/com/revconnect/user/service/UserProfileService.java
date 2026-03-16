@@ -38,7 +38,15 @@ public class UserProfileService {
     @Transactional
     public UserSummaryResponse syncUser(SyncUserRequest request) {
         UserProfile profile = userProfileRepository.findById(request.getId())
-                .orElseGet(UserProfile::new);
+                .orElseGet(() -> userProfileRepository.findByEmail(request.getEmail())
+                        .map(existingProfile -> {
+                            if (!existingProfile.getId().equals(request.getId())) {
+                                userProfileRepository.delete(existingProfile);
+                                return new UserProfile();
+                            }
+                            return existingProfile;
+                        })
+                        .orElseGet(UserProfile::new));
 
         profile.setId(request.getId());
         profile.setEmail(request.getEmail());

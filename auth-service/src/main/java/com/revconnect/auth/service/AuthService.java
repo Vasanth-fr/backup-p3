@@ -37,6 +37,9 @@ public class AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
         }
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username already registered");
+        }
 
         // Create new user
         User user = User.builder()
@@ -78,7 +81,7 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
 
         // Find user
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = findByIdentifier(request.getIdentifier())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         // Validate password
@@ -130,6 +133,16 @@ public class AuthService {
                             .build();
                 })
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+    }
+
+    private java.util.Optional<User> findByIdentifier(String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            return java.util.Optional.empty();
+        }
+
+        return identifier.contains("@")
+                ? userRepository.findByEmail(identifier)
+                : userRepository.findByUsername(identifier);
     }
 
     private void syncUserProfile(Long id, String email, String username, String firstName, String lastName) {
