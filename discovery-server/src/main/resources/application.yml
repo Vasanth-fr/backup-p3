@@ -1,25 +1,5 @@
-server:
-  port: 8761
-
 spring:
   application:
     name: discovery-server
-
-eureka:
-  instance:
-    hostname: discovery-server
-
-  client:
-    register-with-eureka: false
-    fetch-registry: false
-    service-url:
-      defaultZone: http://discovery-server:8761/eureka/
-
-  server:
-    enable-self-preservation: false
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+  config:
+    import: optional:configserver:http://localhost:8888
