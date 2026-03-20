@@ -21,7 +21,7 @@ describe('ProfileViewComponent', () => {
   beforeEach(async () => {
     userServiceSpy = jasmine.createSpyObj('UserService', ['getUserById']);
     postServiceSpy = jasmine.createSpyObj('PostService', ['getUserPosts', 'getComments', 'likePost', 'unlikePost', 'addComment', 'deleteComment', 'deletePost']);
-    networkServiceSpy = jasmine.createSpyObj('NetworkService', ['follow', 'unfollow', 'isFollowing', 'getFollowerCount', 'getFollowingCount']);
+    networkServiceSpy = jasmine.createSpyObj('NetworkService', ['follow', 'unfollow', 'isFollowing', 'getFollowerCount', 'getFollowingCount', 'getConnectionCount']);
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentUserId']);
 
     authServiceSpy.getCurrentUserId.and.returnValue(2);
@@ -43,6 +43,7 @@ describe('ProfileViewComponent', () => {
     networkServiceSpy.isFollowing.and.returnValue(of(false));
     networkServiceSpy.getFollowerCount.and.returnValue(of(5));
     networkServiceSpy.getFollowingCount.and.returnValue(of(3));
+    networkServiceSpy.getConnectionCount.and.returnValue(of(7));
 
     await TestBed.configureTestingModule({
       imports: [FormsModule, RouterTestingModule],
@@ -68,6 +69,14 @@ describe('ProfileViewComponent', () => {
   it('should load profile and posts', () => {
     expect(userServiceSpy.getUserById).toHaveBeenCalledWith(1);
     expect(postServiceSpy.getUserPosts).toHaveBeenCalledWith(1, 0, 20);
+    expect(networkServiceSpy.getFollowerCount).toHaveBeenCalledWith(1);
+    expect(networkServiceSpy.getFollowingCount).toHaveBeenCalledWith(1);
+  });
+
+  it('should use network counts for profile stats', () => {
+    expect(component.profile.followerCount).toBe(5);
+    expect(component.profile.followingCount).toBe(3);
+    expect(component.profile.connectionCount).toBe(7);
   });
 
   it('should follow user', () => {

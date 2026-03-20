@@ -1,6 +1,7 @@
 package com.revconnect.interaction.service;
 
 import com.revconnect.interaction.client.NotificationClient;
+import com.revconnect.interaction.client.PostClient;
 import com.revconnect.interaction.client.UserClient;
 import com.revconnect.interaction.dto.CommentRequest;
 import com.revconnect.interaction.dto.CommentResponse;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.*;
 class CommentServiceTest {
 
     @Mock private CommentRepository commentRepository;
+    @Mock private PostClient postClient;
     @Mock private UserClient userClient;
     @Mock private NotificationClient notificationClient;
 
@@ -50,6 +52,7 @@ class CommentServiceTest {
     void addComment_savesAndReturnsResponse() {
         CommentRequest req = CommentRequest.builder().postId(100L).content("Great post!").build();
         when(commentRepository.save(any(Comment.class))).thenReturn(sampleComment);
+        when(postClient.getPost(100L)).thenReturn(Map.of("id", 100L, "userId", 20L));
         when(userClient.getUserDetails(10L)).thenReturn(Map.of("username", "alice", "id", 10L));
 
         CommentResponse response = commentService.addComment(req, 10L);
@@ -58,6 +61,11 @@ class CommentServiceTest {
         assertThat(response.getPostId()).isEqualTo(100L);
         assertThat(response.getUserId()).isEqualTo(10L);
         verify(commentRepository).save(any(Comment.class));
+        verify(notificationClient).sendNotification(argThat(notification ->
+                notification.get("type").equals("COMMENT")
+                        && notification.get("userId").equals(20L)
+                        && notification.get("referenceId").equals(100L)
+                        && notification.get("message").equals("alice commented on your post")));
     }
 
     @Test
@@ -65,12 +73,27 @@ class CommentServiceTest {
     void addComment_userClientFails_usesFallback() {
         CommentRequest req = CommentRequest.builder().postId(100L).content("Nice!").build();
         when(commentRepository.save(any(Comment.class))).thenReturn(sampleComment);
+        when(postClient.getPost(100L)).thenReturn(Map.of("id", 100L, "userId", 20L));
         when(userClient.getUserDetails(anyLong())).thenThrow(new RuntimeException("User service down"));
 
         CommentResponse response = commentService.addComment(req, 10L);
 
         assertThat(response).isNotNull();
         assertThat(response.getUserDetails()).containsKey("username");
+    }
+
+    @Test
+    @DisplayName("addComment - does not notify when user comments on own post")
+    void addComment_ownPost_doesNotSendNotification() {
+        CommentRequest req = CommentRequest.builder().postId(100L).content("Nice!").build();
+        when(commentRepository.save(any(Comment.class))).thenReturn(sampleComment);
+        when(postClient.getPost(100L)).thenReturn(Map.of("id", 100L, "userId", 10L));
+        when(userClient.getUserDetails(10L)).thenReturn(Map.of("username", "alice", "id", 10L));
+
+        CommentResponse response = commentService.addComment(req, 10L);
+
+        assertThat(response).isNotNull();
+        verify(notificationClient, never()).sendNotification(any());
     }
 
     @Test

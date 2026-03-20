@@ -41,7 +41,38 @@ describe('NotificationService', () => {
 
     const req = httpMock.expectOne(`${API}/1/read`);
     expect(req.request.method).toBe('PUT');
+    req.flush({ id: 1, isRead: true });
 
+  });
+
+  it('should update unread count immediately when marking notification as read', () => {
+    const counts: number[] = [];
+    service.unreadCount$.subscribe(count => counts.push(count));
+
+    service.getUnreadCount().subscribe();
+    const countReq = httpMock.expectOne(`${API}/count`);
+    countReq.flush({ total: 3, unread: 2 });
+
+    service.markAsRead(1).subscribe();
+    const readReq = httpMock.expectOne(`${API}/1/read`);
+    readReq.flush({ id: 1, isRead: true });
+
+    expect(counts.at(-1)).toBe(1);
+  });
+
+  it('should reset unread count immediately when marking all as read', () => {
+    const counts: number[] = [];
+    service.unreadCount$.subscribe(count => counts.push(count));
+
+    service.getUnreadCount().subscribe();
+    const countReq = httpMock.expectOne(`${API}/count`);
+    countReq.flush({ total: 5, unread: 4 });
+
+    service.markAllAsRead().subscribe();
+    const readAllReq = httpMock.expectOne(`${API}/read-all`);
+    readAllReq.flush({});
+
+    expect(counts.at(-1)).toBe(0);
   });
 
 });

@@ -12,7 +12,6 @@ export interface UserProfileResponse {
   firstName?: string;
   lastName?: string;
   bio?: string;
-  profilePicture?: string;
   location?: string;
   website?: string;
   role?: UserRole;
@@ -27,7 +26,6 @@ export interface UserSummaryResponse {
   fullName?: string;
   username?: string;
   bio?: string;
-  profilePicture?: string;
   followerCount?: number;
   followingCount?: number;
   connectionCount?: number;

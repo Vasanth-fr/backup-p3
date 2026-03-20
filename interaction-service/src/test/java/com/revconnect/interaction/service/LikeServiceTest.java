@@ -1,6 +1,8 @@
 package com.revconnect.interaction.service;
 
 import com.revconnect.interaction.client.NotificationClient;
+import com.revconnect.interaction.client.PostClient;
+import com.revconnect.interaction.client.UserClient;
 import com.revconnect.interaction.dto.LikeRequest;
 import com.revconnect.interaction.dto.LikeResponse;
 import com.revconnect.interaction.entity.Like;
@@ -15,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -25,6 +28,8 @@ import static org.mockito.Mockito.*;
 class LikeServiceTest {
 
     @Mock private LikeRepository likeRepository;
+    @Mock private PostClient postClient;
+    @Mock private UserClient userClient;
     @Mock private NotificationClient notificationClient;
 
     @InjectMocks private LikeService likeService;
@@ -46,6 +51,8 @@ class LikeServiceTest {
         req.setPostId(100L);
         when(likeRepository.existsByPostIdAndUserId(100L, 10L)).thenReturn(false);
         when(likeRepository.save(any(Like.class))).thenReturn(sampleLike);
+        when(postClient.getPost(100L)).thenReturn(Map.of("id", 100L, "userId", 20L));
+        when(userClient.getUserDetails(10L)).thenReturn(Map.of("id", 10L, "username", "alice"));
 
         LikeResponse response = likeService.likePost(req, 10L);
 
@@ -53,6 +60,11 @@ class LikeServiceTest {
         assertThat(response.getPostId()).isEqualTo(100L);
         assertThat(response.getUserId()).isEqualTo(10L);
         verify(likeRepository).save(any(Like.class));
+        verify(notificationClient).sendNotification(argThat(notification ->
+                notification.get("type").equals("LIKE")
+                        && notification.get("userId").equals(20L)
+                        && notification.get("referenceId").equals(100L)
+                        && notification.get("message").equals("alice liked your post")));
     }
 
     @Test
@@ -76,6 +88,8 @@ class LikeServiceTest {
         req.setPostId(100L);
         when(likeRepository.existsByPostIdAndUserId(100L, 10L)).thenReturn(false);
         when(likeRepository.save(any(Like.class))).thenReturn(sampleLike);
+        when(postClient.getPost(100L)).thenReturn(Map.of("id", 100L, "userId", 20L));
+        when(userClient.getUserDetails(10L)).thenReturn(Map.of("id", 10L, "username", "alice"));
         doThrow(new RuntimeException("Notification service down"))
                 .when(notificationClient).sendNotification(any());
 
@@ -83,6 +97,22 @@ class LikeServiceTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("likePost - does not notify when user likes own post")
+    void likePost_ownPost_doesNotSendNotification() {
+        LikeRequest req = new LikeRequest();
+        req.setPostId(100L);
+        when(likeRepository.existsByPostIdAndUserId(100L, 10L)).thenReturn(false);
+        when(likeRepository.save(any(Like.class))).thenReturn(sampleLike);
+        when(postClient.getPost(100L)).thenReturn(Map.of("id", 100L, "userId", 10L));
+
+        LikeResponse response = likeService.likePost(req, 10L);
+
+        assertThat(response).isNotNull();
+        verify(notificationClient, never()).sendNotification(any());
+        verify(userClient, never()).getUserDetails(anyLong());
     }
 
     @Test

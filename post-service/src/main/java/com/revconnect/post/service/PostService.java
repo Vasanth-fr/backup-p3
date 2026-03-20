@@ -1,6 +1,7 @@
 package com.revconnect.post.service;
 
 import com.revconnect.post.client.InteractionClient;
+import com.revconnect.post.client.NetworkClient;
 import com.revconnect.post.client.UserClient;
 import com.revconnect.post.dto.CreatePostRequest;
 import com.revconnect.post.dto.FeedResponse;
@@ -16,8 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,13 +29,16 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final InteractionClient interactionClient;
+    private final NetworkClient networkClient;
     private final UserClient userClient;
 
     public PostService(PostRepository postRepository,
                       InteractionClient interactionClient,
+                      NetworkClient networkClient,
                       UserClient userClient) {
         this.postRepository = postRepository;
         this.interactionClient = interactionClient;
+        this.networkClient = networkClient;
         this.userClient = userClient;
     }
 
@@ -107,14 +114,11 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public FeedResponse getFeed(Long userId, int page, int size) {
-        // Get list of user IDs that the current user follows
-        List<Long> followedUserIds = getFollowedUserIds(userId);
-
-        // Add the current user's ID to see their own posts in the feed
-        followedUserIds.add(userId);
+        Set<Long> feedUserIds = new LinkedHashSet<>(getConnectedUserIds(userId));
+        feedUserIds.add(userId);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Post> postPage = postRepository.findByUserIdInOrderByCreatedAtDesc(followedUserIds, pageable);
+        Page<Post> postPage = postRepository.findByUserIdInOrderByCreatedAtDesc(new ArrayList<>(feedUserIds), pageable);
 
         List<PostResponse> postResponses = postPage.getContent().stream()
                 .map(post -> mapToPostResponseWithCounts(post, userId))
@@ -199,9 +203,30 @@ public class PostService {
         }
     }
 
-    private List<Long> getFollowedUserIds(Long userId) {
-        // Network-service feed integration is not wired yet, so we fall back
-        // to the current user's own posts instead of failing the entire feed.
-        return new ArrayList<>();
+    private List<Long> getConnectedUserIds(Long userId) {
+        try {
+            List<NetworkClient.ConnectionResponse> connections = networkClient.getConnections(userId);
+            return connections.stream()
+                    .map(connection -> resolveConnectedUserId(connection, userId))
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            // If the network service is unavailable, still return the user's own posts.
+            return new ArrayList<>();
+        }
+    }
+
+    private Long resolveConnectedUserId(NetworkClient.ConnectionResponse connection, Long currentUserId) {
+        if (connection == null) {
+            return null;
+        }
+        if (currentUserId.equals(connection.getUserId())) {
+            return connection.getConnectedUserId();
+        }
+        if (currentUserId.equals(connection.getConnectedUserId())) {
+            return connection.getUserId();
+        }
+        return null;
     }
 }

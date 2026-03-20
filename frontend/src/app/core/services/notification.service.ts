@@ -41,6 +41,7 @@ export class NotificationService {
   // P3: PUT /api/notifications/{id}/read
   markAsRead(id: number): Observable<Notification> {
     return this.http.put<any>(`${this.API}/${id}/read`, {}).pipe(
+      tap(() => this.updateUnreadCount(-1)),
       map(notification => ({
         ...notification,
         read: notification.read ?? notification.isRead ?? true
@@ -50,7 +51,9 @@ export class NotificationService {
 
   // P3: PUT /api/notifications/read-all
   markAllAsRead(): Observable<void> {
-    return this.http.put<void>(`${this.API}/read-all`, {});
+    return this.http.put<void>(`${this.API}/read-all`, {}).pipe(
+      tap(() => this.unreadCount.next(0))
+    );
   }
 
   // P3: DELETE /api/notifications/{id}
@@ -73,5 +76,10 @@ export class NotificationService {
     this.pollingSubscription?.unsubscribe();
     this.pollingSubscription = undefined;
     this.unreadCount.next(0);
+  }
+
+  private updateUnreadCount(delta: number): void {
+    const nextCount = Math.max(this.unreadCount.value + delta, 0);
+    this.unreadCount.next(nextCount);
   }
 }

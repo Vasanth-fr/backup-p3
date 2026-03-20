@@ -1,6 +1,7 @@
 package com.revconnect.post.service;
 
 import com.revconnect.post.client.InteractionClient;
+import com.revconnect.post.client.NetworkClient;
 import com.revconnect.post.client.UserClient;
 import com.revconnect.post.dto.CreatePostRequest;
 import com.revconnect.post.dto.FeedResponse;
@@ -32,6 +33,7 @@ class PostServiceTest {
 
     @Mock private PostRepository postRepository;
     @Mock private InteractionClient interactionClient;
+    @Mock private NetworkClient networkClient;
     @Mock private UserClient userClient;
 
     @InjectMocks private PostService postService;
@@ -198,5 +200,56 @@ class PostServiceTest {
 
         assertThat(response.getPosts()).isEmpty();
         assertThat(response.getTotalElements()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("getFeed - includes posts from current user and accepted connections")
+    void getFeed_includesConnectedUsersPosts() {
+        Post ownPost = Post.builder()
+                .id(1L).userId(10L).content("My post")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        Post friendPost = Post.builder()
+                .id(2L).userId(20L).content("Friend post")
+                .createdAt(LocalDateTime.now().minusMinutes(1))
+                .updatedAt(LocalDateTime.now().minusMinutes(1))
+                .build();
+
+        NetworkClient.ConnectionResponse connection = new NetworkClient.ConnectionResponse();
+        connection.setUserId(10L);
+        connection.setConnectedUserId(20L);
+        connection.setStatus("ACCEPTED");
+
+        Page<Post> page = new PageImpl<>(List.of(ownPost, friendPost), PageRequest.of(0, 20), 2);
+
+        when(networkClient.getConnections(10L)).thenReturn(List.of(connection));
+        when(postRepository.findByUserIdInOrderByCreatedAtDesc(eq(List.of(20L, 10L)), any(Pageable.class))).thenReturn(page);
+        when(userClient.getUserDetails(10L)).thenReturn(Map.of("username", "me"));
+        when(userClient.getUserDetails(20L)).thenReturn(Map.of("username", "friend"));
+        when(interactionClient.getInteractionCounts(anyLong())).thenReturn(Map.of("likeCount", 0L, "commentCount", 0L));
+        when(interactionClient.checkUserLiked(anyLong(), eq(10L))).thenReturn(Map.of("hasLiked", false));
+
+        FeedResponse response = postService.getFeed(10L, 0, 20);
+
+        assertThat(response.getPosts()).hasSize(2);
+        assertThat(response.getPosts()).extracting(PostResponse::getUserId).containsExactly(10L, 20L);
+    }
+
+    @Test
+    @DisplayName("getFeed - falls back to own posts when network-service call fails")
+    void getFeed_networkFailure_fallsBackToOwnPosts() {
+        Page<Post> page = new PageImpl<>(List.of(samplePost), PageRequest.of(0, 20), 1);
+
+        when(networkClient.getConnections(10L)).thenThrow(new RuntimeException("network down"));
+        when(postRepository.findByUserIdInOrderByCreatedAtDesc(eq(List.of(10L)), any(Pageable.class))).thenReturn(page);
+        when(userClient.getUserDetails(10L)).thenReturn(Map.of("username", "alice"));
+        when(interactionClient.getInteractionCounts(anyLong())).thenReturn(Map.of("likeCount", 0L, "commentCount", 0L));
+        when(interactionClient.checkUserLiked(anyLong(), eq(10L))).thenReturn(Map.of("hasLiked", false));
+
+        FeedResponse response = postService.getFeed(10L, 0, 20);
+
+        assertThat(response.getPosts()).hasSize(1);
+        assertThat(response.getPosts().get(0).getUserId()).isEqualTo(10L);
     }
 }

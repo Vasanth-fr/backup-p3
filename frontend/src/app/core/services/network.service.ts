@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Follow, User } from '../../shared/models/models';
 
@@ -8,7 +9,6 @@ export interface NetworkUserDetails {
   id: number;
   username?: string;
   fullName?: string;
-  profileImageUrl?: string | null;
 }
 
 export interface NetworkConnection {
@@ -86,6 +86,12 @@ export class NetworkService {
 
   getFollowingCount(userId: number): Observable<number> {
     return this.http.get<number>(`${this.API}/following-count/${userId}`);
+  }
+
+  getConnectionCount(): Observable<number> {
+    return this.http.get<{ count: number }>(`${this.API}/count`).pipe(
+      map(response => response.count ?? 0)
+    );
   }
 
   // ================= DISCOVERY =================

@@ -76,15 +76,18 @@ export class ProfileViewComponent implements OnInit {
     this.loading = true;
 
     const profile$ = this.userService.getUserById(this.userId)
-  .pipe(catchError(() => of(null)));
+      .pipe(catchError(() => of(null)));
     const following$ = this.isOwnProfile
       ? of(false)
       : this.networkService.isFollowing(this.userId).pipe(catchError(() => of(false)));
     const followerCount$ = this.networkService.getFollowerCount(this.userId).pipe(catchError(() => of(0)));
     const followingCount$ = this.networkService.getFollowingCount(this.userId).pipe(catchError(() => of(0)));
+    const connectionCount$ = this.isOwnProfile
+      ? this.networkService.getConnectionCount().pipe(catchError(() => of(0)))
+      : of(null);
 
-    forkJoin([profile$, following$, followerCount$, followingCount$]).subscribe({
-       next: ([profile, isFollowing, followerCount, followingCount]) => {
+    forkJoin([profile$, following$, followerCount$, followingCount$, connectionCount$]).subscribe({
+       next: ([profile, isFollowing, followerCount, followingCount, connectionCount]) => {
 
          if (!profile) {
            this.errorMsg = 'User not found.';
@@ -95,8 +98,9 @@ export class ProfileViewComponent implements OnInit {
          this.profile = {
            ...profile,
            isFollowing,
-           followerCount: profile.followerCount ?? followerCount,
-           followingCount: profile.followingCount ?? followingCount,
+           followerCount,
+           followingCount,
+           connectionCount: connectionCount ?? profile.connectionCount ?? 0,
          };
 
          this.loading = false;
